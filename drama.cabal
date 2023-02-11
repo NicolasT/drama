@@ -66,3 +66,7 @@ executable example-shared-resource
 executable example-use
   import: common, executable
   main-is: examples/use.hs
+
+executable example-state
+  import: common, executable
+  main-is: examples/state.hs

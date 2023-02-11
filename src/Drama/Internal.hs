@@ -21,7 +21,7 @@ module Drama.Internal where
 
 import Control.Applicative (Alternative)
 import Control.Concurrent (MVar, newEmptyMVar, putMVar, takeMVar)
-import Control.Monad (MonadPlus, void)
+import Control.Monad (MonadPlus, void, (>=>))
 import Control.Monad.Fix (MonadFix)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.IO.Unlift (MonadUnliftIO)
@@ -203,16 +203,22 @@ receive
   :: (forall res. msg res -> Actor msg res)
   -- ^ Callback function that responds to messages
   -> Actor msg ()
-receive callback = do
+receive callback = receive' (callback >=> \res -> pure (res, ()))
+
+receive'
+  :: (forall res. msg res -> Actor msg (res, a))
+  -> Actor msg a
+receive' callback = do
   Mailbox outChan <- Actor $ asks mailbox
   envelope <- liftIO $ Unagi.readChan outChan
   case envelope of
-    Cast msg ->
-      callback msg
+    Cast msg -> do
+      ((), a) <- callback msg
+      return a
     Call resMVar msg -> do
-      res <- callback msg
+      (res, a) <- callback msg
       liftIO $ putMVar resMVar res
-
+      return a
 
 -- | Try to receive a message. When the mailbox is empty, returns immediately.
 --

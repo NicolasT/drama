@@ -52,6 +52,7 @@ module Drama
 
     -- * Receiving messages
   , receive
+  , receive'
   , tryReceive
 
     -- * Running your program
